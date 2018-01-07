@@ -1,0 +1,107 @@
+buildscript {
+	repositories {
+		mavenCentral()
+	}
+
+	dependencies {
+		classpath group: 'org.junit.platform', name: 'junit-platform-gradle-plugin', version: '1.1.+'
+	}
+}
+
+allprojects {
+	group = 'foo'
+	version = '1.0-SNAPSHOT'
+}
+
+ext {
+	apiGuardianVersion = '1.0.+'
+	junitPlatformVersion = '1.1.+'
+	junitVersion = '5.1.+'
+}
+
+subprojects {
+	apply plugin: 'java-library'
+	apply plugin: 'org.junit.platform.gradle.plugin'
+
+	sourceCompatibility = 9
+	targetCompatibility = 9
+	tasks.withType(JavaCompile) {
+		options.encoding = 'UTF-8'
+	}
+
+	repositories {
+		mavenCentral()
+	}
+
+	dependencies {
+		testCompileOnly group: 'org.apiguardian', name: 'apiguardian-api', version: apiGuardianVersion
+		testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: junitVersion
+		testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junitVersion
+		testRuntimeOnly group: 'org.junit.platform', name: 'junit-platform-launcher', version: junitPlatformVersion
+	}
+
+	test {
+		testLogging.showStandardStreams = true
+	}
+
+	afterEvaluate {
+		compileJava {
+			inputs.property('moduleName', moduleName)
+			doFirst {
+				options.compilerArgs = [
+					'--module-path', classpath.asPath,
+				]
+				classpath = files()
+			}
+		}
+
+		compileTestJava {
+			inputs.property('moduleName', moduleName)
+			doFirst {
+				options.compilerArgs = [
+					'--module-path', classpath.asPath,
+					'--add-modules', 'org.junit.jupiter.api',
+					'--add-reads', "$moduleName=org.junit.jupiter.api",
+					'--patch-module', "$moduleName=" + files(sourceSets.test.java.srcDirs).asPath,
+				]
+				classpath = files()
+			}
+		}
+
+		if (!rootProject.hasProperty('noDummyTest')) {
+			task dummyTest(type: Test) {
+				enabled = false
+			}
+
+			junitPlatformTest {
+				dependsOn.add(dummyTest)
+			}
+		}
+
+		junitPlatformTest {
+			inputs.property('moduleName', moduleName)
+			doFirst {
+				def newJvmArgs = jvmArgs
+				newJvmArgs.addAll([
+					'-ea',
+					'-esa',
+				])
+
+				junitPlatform.filters.packages.include.each { packageName ->
+					newJvmArgs.addAll([ '--add-opens', "$moduleName/$packageName=org.junit.platform.commons" ])
+				}
+
+				newJvmArgs.addAll([
+					'--add-reads', "$moduleName=org.junit.jupiter.api",
+					'--patch-module', "$moduleName=" + files(sourceSets.test.java.outputDir).asPath,
+				])
+
+				jvmArgs = newJvmArgs
+			}
+		}
+	}
+}
+
+wrapper {
+	gradleVersion = '4.4.1'
+}

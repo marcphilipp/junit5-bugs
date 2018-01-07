@@ -1,0 +1,4 @@
+module testmodule
+{
+	requires moduleB;
+}

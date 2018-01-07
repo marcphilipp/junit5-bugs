@@ -1,0 +1,12 @@
+description = ''
+ext.moduleName = 'moduleA'
+
+junitPlatform {
+	enableModulePath = true
+
+	if (!rootProject.hasProperty('noJUnitFilters')) {
+		filters.packages.include = [
+			'packageA',
+		]
+	}
+}

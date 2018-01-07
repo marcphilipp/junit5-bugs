@@ -1,0 +1,5 @@
+rootProject.name = 'root-project'
+
+include ':projectA'
+include ':projectB'
+include ':atestproject'
