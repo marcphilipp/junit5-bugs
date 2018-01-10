@@ -1,4 +1,0 @@
-module testmodule
-{
-	requires moduleB;
-}

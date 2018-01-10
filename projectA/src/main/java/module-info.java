@@ -1,4 +1,0 @@
-module moduleA
-{
-	exports packageA;
-}

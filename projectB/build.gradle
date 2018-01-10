@@ -4,13 +4,3 @@ ext.moduleName = 'moduleB'
 dependencies {
 	implementation project(':projectA')
 }
-
-junitPlatform {
-	enableModulePath = true
-
-	if (!rootProject.hasProperty('noJUnitFilters')) {
-		filters.packages.include = [
-			'packageB',
-		]
-	}
-}
